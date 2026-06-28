@@ -1,0 +1,43 @@
+# Railway deployment — single container running all backend microservices
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+COPY package.json package-lock.json* ./
+COPY nest-cli.json tsconfig.json ./
+COPY apps ./apps
+COPY libs ./libs
+
+RUN npm ci
+RUN npx nest build api-gateway && \
+    npx nest build auth-service && \
+    npx nest build identity-service && \
+    npx nest build ride-service && \
+    npx nest build payment-service && \
+    npx nest build location-service && \
+    npx nest build notification-service
+
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
+COPY scripts/start-railway.sh ./scripts/start-railway.sh
+
+RUN chmod +x ./scripts/start-railway.sh
+
+# Railway injects PORT — gateway listens here
+ENV PORT=3000
+ENV API_GATEWAY_PORT=3000
+ENV AUTH_SERVICE_PORT=3001
+ENV IDENTITY_SERVICE_PORT=3002
+ENV RIDE_SERVICE_PORT=3003
+ENV PAYMENT_SERVICE_PORT=3004
+ENV LOCATION_SERVICE_PORT=3005
+ENV NOTIFICATION_SERVICE_PORT=3006
+
+EXPOSE 3000
+
+CMD ["sh", "scripts/start-railway.sh"]

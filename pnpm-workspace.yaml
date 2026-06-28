@@ -1,0 +1,6 @@
+packages:
+  - 'backend'
+  - 'backend/libs/*'
+  - 'backend/apps/*'
+  - 'admin'
+  - 'packages/*'

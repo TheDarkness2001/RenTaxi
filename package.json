@@ -1,0 +1,25 @@
+{
+  "name": "taxi-uz-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nationwide taxi super-app platform for Uzbekistan",
+  "scripts": {
+    "dev": "pnpm --filter @taxi/backend dev:all",
+    "dev:gateway": "pnpm --filter @taxi/api-gateway start:dev",
+    "dev:auth": "pnpm --filter @taxi/auth-service start:dev",
+    "dev:identity": "pnpm --filter @taxi/identity-service start:dev",
+    "dev:ride": "pnpm --filter @taxi/ride-service start:dev",
+    "dev:admin": "pnpm --filter @taxi/admin dev",
+    "build": "pnpm -r build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "db:migrate": "pnpm --filter @taxi/database migrate",
+    "db:seed": "pnpm --filter @taxi/database seed",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

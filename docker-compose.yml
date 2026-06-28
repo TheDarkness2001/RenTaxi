@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: taxi-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-taxi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taxi_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-taxi_platform}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./backend/libs/database/migrations/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./backend/libs/database/migrations/002_notifications.sql:/docker-entrypoint-initdb.d/02-notifications.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U taxi -d taxi_platform']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: taxi-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: taxi-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: taxi
+      RABBITMQ_DEFAULT_PASS: taxi_secret
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'check_running']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: taxi-minio
+    environment:
+      MINIO_ROOT_USER: taxi_minio
+      MINIO_ROOT_PASSWORD: taxi_minio_secret
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:

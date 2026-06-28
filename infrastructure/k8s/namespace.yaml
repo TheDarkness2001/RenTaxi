@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: taxi-uz
+  labels:
+    app: taxi-uz-platform
