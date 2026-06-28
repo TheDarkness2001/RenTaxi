@@ -55,56 +55,75 @@ export class RedisService implements OnModuleDestroy {
     return entry.value;
   }
 
-  private async run<T>(redisFn: () => Promise<T>, memoryFn: () => T | Promise<T>): Promise<T> {
-    if (this.useMemory || !this.client) return memoryFn();
-    try {
-      return await redisFn();
-    } catch (err) {
-      this.logger.warn(`Redis op failed, falling back to memory: ${(err as Error).message}`);
-      this.useMemory = true;
-      return memoryFn();
-    }
+  private markMemoryFallback(err: unknown) {
+    this.logger.warn(`Redis op failed, falling back to memory: ${(err as Error).message}`);
+    this.useMemory = true;
   }
 
   async set(key: string, value: string, ttlSeconds: number): Promise<void> {
-    await this.run(
-      () => this.client!.set(key, value, 'EX', ttlSeconds),
-      () => { this.memorySet(key, value, ttlSeconds); },
-    );
+    if (this.useMemory || !this.client) {
+      this.memorySet(key, value, ttlSeconds);
+      return;
+    }
+    try {
+      await this.client.set(key, value, 'EX', ttlSeconds);
+    } catch (err) {
+      this.markMemoryFallback(err);
+      this.memorySet(key, value, ttlSeconds);
+    }
   }
 
   async get(key: string): Promise<string | null> {
-    return this.run(
-      () => this.client!.get(key),
-      () => this.memoryGet(key),
-    );
+    if (this.useMemory || !this.client) return this.memoryGet(key);
+    try {
+      return await this.client.get(key);
+    } catch (err) {
+      this.markMemoryFallback(err);
+      return this.memoryGet(key);
+    }
   }
 
   async del(key: string): Promise<void> {
-    await this.run(
-      () => this.client!.del(key).then(() => undefined),
-      () => { this.memory.delete(key); },
-    );
+    if (this.useMemory || !this.client) {
+      this.memory.delete(key);
+      return;
+    }
+    try {
+      await this.client.del(key);
+    } catch (err) {
+      this.markMemoryFallback(err);
+      this.memory.delete(key);
+    }
   }
 
   async incr(key: string): Promise<number> {
-    return this.run(
-      () => this.client!.incr(key),
-      () => {
-        const current = parseInt(this.memoryGet(key) || '0', 10) + 1;
-        this.memorySet(key, String(current), 3600);
-        return current;
-      },
-    );
+    if (this.useMemory || !this.client) {
+      const current = parseInt(this.memoryGet(key) || '0', 10) + 1;
+      this.memorySet(key, String(current), 3600);
+      return current;
+    }
+    try {
+      return await this.client.incr(key);
+    } catch (err) {
+      this.markMemoryFallback(err);
+      const current = parseInt(this.memoryGet(key) || '0', 10) + 1;
+      this.memorySet(key, String(current), 3600);
+      return current;
+    }
   }
 
   async expire(key: string, ttlSeconds: number): Promise<void> {
-    await this.run(
-      () => this.client!.expire(key, ttlSeconds).then(() => undefined),
-      () => {
-        const val = this.memoryGet(key);
-        if (val != null) this.memorySet(key, val, ttlSeconds);
-      },
-    );
+    if (this.useMemory || !this.client) {
+      const val = this.memoryGet(key);
+      if (val != null) this.memorySet(key, val, ttlSeconds);
+      return;
+    }
+    try {
+      await this.client.expire(key, ttlSeconds);
+    } catch (err) {
+      this.markMemoryFallback(err);
+      const val = this.memoryGet(key);
+      if (val != null) this.memorySet(key, val, ttlSeconds);
+    }
   }
 }
