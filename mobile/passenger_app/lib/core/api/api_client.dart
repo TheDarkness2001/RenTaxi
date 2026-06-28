@@ -50,22 +50,33 @@ class ApiClient {
     }
 
     final http.Response response;
-    switch (method) {
-      case 'POST':
-        response = await http.post(uri, headers: headers, body: body != null ? jsonEncode(body) : null);
-        break;
-      case 'PATCH':
-        response = await http.patch(uri, headers: headers, body: body != null ? jsonEncode(body) : null);
-        break;
-      default:
-        response = await http.get(uri, headers: headers);
+    try {
+      switch (method) {
+        case 'POST':
+          response = await http.post(uri, headers: headers, body: body != null ? jsonEncode(body) : null);
+          break;
+        case 'PATCH':
+          response = await http.patch(uri, headers: headers, body: body != null ? jsonEncode(body) : null);
+          break;
+        default:
+          response = await http.get(uri, headers: headers);
+      }
+    } catch (_) {
+      throw ApiException(0, 'Serverga ulanib bo\'lmadi. Internetni tekshiring.');
     }
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>? ?? {};
+    final data = response.body.isNotEmpty
+        ? (jsonDecode(response.body) as Map<String, dynamic>? ?? {})
+        : <String, dynamic>{};
 
     if (response.statusCode >= 400) {
       final error = data['error'];
-      final message = error is Map ? (error['message'] as String? ?? 'Request failed') : 'Request failed';
+      String message = 'Request failed';
+      if (error is Map && error['message'] != null) {
+        message = error['message'].toString();
+      } else if (data['message'] != null) {
+        message = data['message'].toString();
+      }
       throw ApiException(response.statusCode, message);
     }
 
