@@ -12,6 +12,7 @@
     "dev:location": "nest start location-service --watch",
     "dev:notification": "nest start notification-service --watch",
     "build": "nest build",
+    "build:prod": "nest build api-gateway && nest build auth-service && nest build identity-service && nest build ride-service && nest build payment-service && nest build location-service && nest build notification-service",
     "lint": "eslint \"{apps,libs}/**/*.ts\"",
     "test": "jest"
   },

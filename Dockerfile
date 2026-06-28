@@ -1,4 +1,4 @@
-# Production image for Railway (all microservices in one container)
+# Build from repo root (when Railway Root Directory is empty or ".")
 FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
@@ -7,10 +7,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
 
-COPY package.json package-lock.json ./
-COPY nest-cli.json tsconfig.json ./
-COPY apps ./apps
-COPY libs ./libs
+COPY backend/package.json backend/package-lock.json ./
+COPY backend/nest-cli.json backend/tsconfig.json ./
+COPY backend/apps ./apps
+COPY backend/libs ./libs
 
 RUN npm ci
 RUN npm run build:prod
@@ -23,7 +23,7 @@ ENV NODE_ENV=production
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
-COPY scripts/start-railway.sh ./scripts/start-railway.sh
+COPY backend/scripts/start-railway.sh ./scripts/start-railway.sh
 
 RUN chmod +x ./scripts/start-railway.sh
 

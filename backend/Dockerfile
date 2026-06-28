@@ -14,13 +14,7 @@ COPY apps ./apps
 COPY libs ./libs
 
 RUN npm ci
-RUN npx nest build api-gateway && \
-    npx nest build auth-service && \
-    npx nest build identity-service && \
-    npx nest build ride-service && \
-    npx nest build payment-service && \
-    npx nest build location-service && \
-    npx nest build notification-service
+RUN npm run build:prod
 
 FROM node:20-bookworm-slim AS runner
 
