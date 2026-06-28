@@ -15,10 +15,12 @@ export class OtpService {
     if (attempts === 1) await this.redis.expire(rateLimitKey, 3600);
     if (attempts > 5) throw new Error('Too many OTP requests');
 
-    const code = process.env.NODE_ENV === 'development' ? '123456' : generateOtp(6);
+    const useMockOtp =
+      process.env.SMS_PROVIDER === 'mock' || process.env.NODE_ENV === 'development';
+    const code = useMockOtp ? '123456' : generateOtp(6);
     await this.redis.set(`otp:${phone}`, code, this.expirySeconds);
 
-    if (process.env.SMS_PROVIDER === 'mock' || process.env.NODE_ENV === 'development') {
+    if (useMockOtp) {
       this.logger.log(`OTP for ${phone}: ${code}`);
     } else {
       // TODO: integrate SMS provider (Playmobile, Eskiz.uz)
