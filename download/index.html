@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RenTaxi — Yuklab olish</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(145deg, #0f172a 0%, #1e293b 50%, #0f766e 100%);
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      max-width: 420px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 24px;
+      padding: 32px;
+      text-align: center;
+    }
+    .logo { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; }
+    .logo span { color: #2dd4bf; }
+    .sub { color: #94a3b8; margin: 8px 0 16px; font-size: 0.95rem; }
+    .steps {
+      text-align: left;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 20px;
+      line-height: 1.6;
+      padding: 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+    }
+    .steps strong { color: #e2e8f0; }
+    #qr { margin: 0 auto 16px; border-radius: 16px; background: #fff; padding: 12px; display: inline-block; }
+    #qr img { display: block; width: 240px; height: 240px; }
+    .hint { font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px; line-height: 1.5; }
+    .link-url { font-size: 0.72rem; color: #64748b; word-break: break-all; margin-bottom: 16px; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px 20px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      color: #fff;
+    }
+    .btn-primary { background: #0d9488; }
+    .btn-secondary { background: rgba(255,255,255,0.12); color: #e2e8f0; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .tab.active { background: rgba(45, 212, 191, 0.2); color: #2dd4bf; border-color: #2dd4bf; }
+    #install-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.95);
+      z-index: 100;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    #install-overlay.show { display: flex; }
+    #install-overlay h2 { margin-bottom: 12px; }
+    #install-overlay p { color: #94a3b8; line-height: 1.6; max-width: 320px; }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid rgba(45,212,191,0.2);
+      border-top-color: #2dd4bf;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="install-overlay">
+    <div class="spinner"></div>
+    <h2>RenTaxi yuklanmoqda...</h2>
+    <p>Yuklab olish tugagach <strong>Ochish</strong> → <strong>O‘rnatish</strong> ni bosing.</p>
+  </div>
+
+  <div class="card">
+    <div class="logo">Ren<span>Taxi</span></div>
+    <p class="sub">O‘zbekiston taksi ilovasi</p>
+
+    <div class="tabs">
+      <button type="button" class="tab active" data-app="passenger">Yo‘lovchi</button>
+      <button type="button" class="tab" data-app="driver">Haydovchi</button>
+    </div>
+
+    <div class="steps">
+      <strong>Android:</strong> QR skanerlang → APK yuklanadi → <strong>Ochish</strong> → <strong>O‘rnatish</strong>.
+      (Telefon birinchi marta &quot;noma&apos;lum ilovalar&quot; ga ruxsat so‘rashi mumkin.)
+    </div>
+
+    <div id="qr"><img id="qr-img" alt="QR kod" width="240" height="240" /></div>
+    <p class="hint">QR to‘g‘ridan-to‘g‘ri APK fayliga yo‘naltiradi</p>
+    <p id="qr-target" class="link-url"></p>
+
+    <a id="download-btn" class="btn btn-primary" href="#">Android — Yuklab olish</a>
+    <a class="btn btn-secondary" href="https://taxibackend-production-4fb8.up.railway.app/docs" target="_blank" rel="noopener">API hujjatlari</a>
+  </div>
+
+  <script>
+    // Public APK URLs (work after you push to GitHub). GitHub Pages URL used when deployed.
+    const GITHUB_USER = 'TheDarkness2001';
+    const GITHUB_REPO = 'RenTaxi';
+    const GITHUB_BRANCH = 'main';
+
+    const APPS = {
+      passenger: {
+        apkFile: 'rentaxi-passenger.apk',
+        githubPath: 'download/rentaxi-passenger.apk',
+      },
+      driver: {
+        apkFile: 'rentaxi-driver.apk',
+        githubPath: 'download/rentaxi-driver.apk',
+      },
+    };
+
+    let currentApp = 'passenger';
+
+    function githubRawUrl(appKey) {
+      const path = APPS[appKey].githubPath;
+      return 'https://github.com/' + GITHUB_USER + '/' + GITHUB_REPO +
+        '/raw/' + GITHUB_BRANCH + '/' + path;
+    }
+
+    function pagesApkUrl(appKey) {
+      if (location.protocol === 'https:' && !location.hostname.includes('github.com')) {
+        return new URL(APPS[appKey].apkFile, location.href).href;
+      }
+      return githubRawUrl(appKey);
+    }
+
+    function apkUrl(appKey) {
+      return pagesApkUrl(appKey);
+    }
+
+    function updateQr() {
+      const target = apkUrl(currentApp);
+      document.getElementById('qr-target').textContent = target;
+      document.getElementById('qr-img').src =
+        'https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=10&data=' +
+        encodeURIComponent(target);
+      document.getElementById('download-btn').href = target;
+    }
+
+    function startAndroidDownload(appKey) {
+      const url = apkUrl(appKey);
+      document.getElementById('install-overlay').classList.add('show');
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = APPS[appKey].apkFile;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setTimeout(function () {
+        window.location.href = url;
+      }, 400);
+    }
+
+    document.querySelectorAll('.tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        document.querySelectorAll('.tab').forEach(function (t) {
+          t.classList.remove('active');
+        });
+        tab.classList.add('active');
+        currentApp = tab.dataset.app;
+        updateQr();
+      });
+    });
+
+    updateQr();
+
+    var isAndroid = /Android/i.test(navigator.userAgent);
+    if (isAndroid) {
+      startAndroidDownload(currentApp);
+    }
+  </script>
+</body>
+</html>

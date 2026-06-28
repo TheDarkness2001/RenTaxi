@@ -44,7 +44,7 @@ class RideApi {
 
   Future<List<dynamic>> getHistory() async {
     final data = await _client.get('/rides/history/list', authenticated: true);
-    return data is List ? data : [];
+    return data is List ? List<dynamic>.from(data as List) : <dynamic>[];
   }
 
   Future<Map<String, dynamic>> getTrip(String tripId) async {

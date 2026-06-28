@@ -1,0 +1,7 @@
+/rentaxi-passenger.apk
+  Content-Type: application/vnd.android.package-archive
+  Content-Disposition: attachment; filename="rentaxi-passenger.apk"
+
+/rentaxi-driver.apk
+  Content-Type: application/vnd.android.package-archive
+  Content-Disposition: attachment; filename="rentaxi-driver.apk"
