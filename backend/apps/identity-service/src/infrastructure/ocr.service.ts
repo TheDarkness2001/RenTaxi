@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { hashValue } from '@taxi/common';
 import { DocumentType } from '@taxi/database';
 
 export interface OcrResult {
@@ -18,8 +19,9 @@ export class OcrService {
   async extractPassportData(imageUrl: string, side: 'front' | 'back'): Promise<OcrResult | null> {
     if (process.env.KYC_OCR_PROVIDER === 'mock') {
       this.logger.log(`Mock OCR for ${side}: ${imageUrl}`);
+      const suffix = hashValue(imageUrl).slice(0, 7).toUpperCase();
       return {
-        passportNumber: 'AA1234567',
+        passportNumber: `AA${suffix}`,
         passportSeries: 'AA',
         firstName: 'JAHONGIR',
         lastName: 'KARIMOV',
